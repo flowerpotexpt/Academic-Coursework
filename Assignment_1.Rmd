@@ -1,0 +1,187 @@
+---
+title: "Statistics with R Assignment 1"
+author: "Yashjit Gangopadhyay (2662062)"
+date: "24/04/2020"
+output:
+  html_document:
+    df_print: paged
+---
+```{r setup}
+knitr::opts_knit$set(root.dir = "/Users/yash/Downloads/Assignment_01/data")
+```
+
+# Question 1
+The data had already been well pre-processed. 
+  - comments are separated into individual column.
+  - names are consistent without spaces and in most of the cases, camelCase is used.
+  - cell formatting wasn't used
+  - the general data split in the 3 sheets (counts, samples, communities) is fine.
+  - sample numbers were used as key.
+However the following factors could have been improved:
+  - taxonomic data could have been separated into an individual metadata file.
+  - more metadata files were required (except taxonomic data).
+  - counts data could have been pre-processed to long/tidy format.
+  - missing values were not treated nor a warning for bad data was provided.
+  - it is better to avoid using more than one language (English and French in this case) as the medium to record data.
+  - 'date' and 'time' columns in sample table needed formatting.
+  - categorical variables could have been encoded.
+
+# Question 2
+Importing required libraries.
+```{r}
+library('readxl')
+library('tidyverse')
+```
+Importing data into objects 'counts', 'communities' and 'samples'.
+```{r}
+#setwd("/Users/yash/Downloads/Assignment_01/data")
+counts = read_excel('lait_caille_data.xlsx')
+samples = read_excel('lait_caille_data.xlsx', sheet = 'samples')
+communities = read_excel('lait_caille_data.xlsx', sheet = 'communities')
+```
+
+# Question 3
+Splitting 'counts' object into 'taxonomy' and 'counts' by 'rankID'.
+```{r}
+taxonomy <- select(counts, c(taxlevel, rankID, taxon))
+counts <- select(counts, -c(taxlevel, taxon) )
+```
+Gathering 'counts' into a longer form 'counts_l'.
+```{r}
+counts_l <- gather(data = counts, key = sample, value = count, -rankID, factor_key=FALSE)
+```
+
+
+# Question 4
+Checking if all unique values in 'counts' is also present in 'samples'.
+```{r}
+check_unique <- c(counts_l$sample %>% unique() ==  samples$sample %>% unique())
+if (check_unique %>% unique()== TRUE){
+  print("All samples in 'counts' are present in 'samples'.")
+} else {
+  print("Some values are missing")
+}
+
+```
+
+# Question 5
+Create 'counts_selected' with 'taxonomy$taxlevel = 6 and samples\$community = communities\$original
+```{r}
+counts_selected <- counts_l %>% 
+  filter(sample %in% subset(samples, community %in% communities$original)$sample) %>%
+  filter(rankID %in% subset(taxonomy, taxlevel == 6)$rankID)
+```
+
+# Question 6
+Create 'counts_selected' by calculating fraction of counts in each sample per genus.
+```{r}
+counts_selected <- counts_selected %>% group_by(sample) %>% mutate(fraction = count/sum(count)) %>% ungroup
+
+```
+
+# Question 7
+Create 'counts_LAB' with individual counts and total fractions of the desired bacterias.
+Create a histogram of the total fractions.
+```{r}
+LAB <-filter(taxonomy, taxon %in% c("Lactococcus", "Lactobacillus", "Streptococcus"))
+counts_LAB <- filter(counts_selected, rankID %in% LAB) 
+counts_LAB <- counts_selected %>% filter(rankID %in% LAB$rankID)
+
+hist_plot <- ggplot(counts_LAB, aes(x = fraction, colour = rankID))+
+  geom_histogram(binwidth = 0.1) + 
+  labs(title=" Fraction of samples in LAB",
+       x ="Fractions", y = "Counts")+
+  scale_colour_discrete(labels = c("Lactococcus", "Lactobacillus", "Streptococcus"))
+
+hist_plot
+
+```
+
+# Question 8
+Summarising the total number of samples per dominant LAB.
+```{r}
+counts_LAB$taxon <- taxonomy$taxon[match(counts_LAB$rankID, taxonomy$rankID)]
+total_1 <- counts_LAB %>% group_by(sample) %>% summarise(total_1 = sum(fraction))
+dominant_LAB <- counts_LAB %>% group_by(sample) %>% summarise(taxon[which.max(fraction)]) %>% 
+  rename('taxon' = 'taxon[which.max(fraction)]') %>% right_join(total_1)
+dominant_LAB$taxon[dominant_LAB$total_1<0.9] <- 'NONE'
+print_table <- as.data.frame(table(dominant_LAB$taxon))
+print_table <- print_table %>% rename('taxon'='Var1','count'='Freq')
+print(print_table)
+```
+# Question 9
+Add 2 new columns with number of samples with contaminants and contaminant fraction to the table created in Question 8.
+```{r}
+
+colon_genera <- read.csv('colon_genera.tab', sep = '\t', header = TRUE, comment.char = '#')
+colon_bacteria <- filter(taxonomy, taxon %in% colon_genera$genus)
+colon_bacteria <- colon_bacteria[-c(6, 7),]
+colon_bacteria_counts <- filter(counts_selected, rankID %in% colon_bacteria)
+colon_bacteria_counts <- counts_selected %>% filter(rankID %in% colon_bacteria$rankID)
+colon_bacteria_counts$taxon <- taxonomy$taxon[match(colon_bacteria_counts$rankID, taxonomy$rankID)]
+total_contaminant_fraction <- colon_bacteria_counts %>% group_by(sample) %>% summarise(total_contaminant_fraction = sum(fraction))
+
+contaminated_table_1 <- colon_bacteria_counts %>% group_by(sample) %>% summarise(taxon[which.max(fraction)]) %>%
+  rename('contaminant_taxon' = 'taxon[which.max(fraction)]') %>%
+  right_join(total_contaminant_fraction)
+
+total_contaminant_count <- colon_bacteria_counts %>% group_by(sample) %>% summarise(total_contaminant_count = sum(count))
+contaminated_table_2 <- colon_bacteria_counts %>% group_by(sample) %>% summarise(taxon[which.max(count)]) %>%
+  rename('contaminant_taxon' = 'taxon[which.max(count)]') %>%
+  right_join(total_contaminant_count)
+
+VAR_ <- contaminated_table_1 %>% filter(total_contaminant_fraction > 0.01)
+VAR_1 <- VAR_ %>% select(sample, total_contaminant_fraction) %>% left_join(dominant_LAB, by = 'sample') %>% left_join(contaminated_table_2, by = 'sample')
+VAR_2 <- VAR_1 %>% group_by(taxon) %>% summarise(sum(total_contaminant_fraction))
+VAR_3 <- as.data.frame(table(VAR_1$taxon))
+VAR_3 <- VAR_3 %>% rename('taxon'='Var1')
+
+print_table_new <- VAR_3 %>% select(taxon, Freq) %>% right_join(print_table, by = 'taxon') 
+print_table_new <- VAR_2 %>% select(taxon, `sum(total_contaminant_fraction)`) %>% right_join(print_table_new, by = 'taxon') 
+
+print_table_new 
+
+```
+
+# Question 11
+Performing t-test
+```{r}
+dom_LAB_genera <- VAR_1 %>% filter(taxon != "NONE")
+NONE_LAB_genera <- VAR_1 %>% filter(taxon == "NONE")
+
+t_test <- t.test(dom_LAB_genera$total_contaminant_fraction, NONE_LAB_genera$total_contaminant_fraction )
+
+t_test
+```
+# Conclusion
+Since we obtained a p-value of 0.16, which is above the p-value threshold = 0.05, we have no
+choice but to reject the null hypothesis. Thus, when a sample is not dominated by LABs, it is 
+more likely to be contaminated by contaminant bacterias.
+
+# Question 12
+Making a table that lists the dominant LAB categories per village (community).
+```{r}
+dominant_LAB$community <- samples$community[match(dominant_LAB$sample, samples$sample)]
+community_summary <- dominant_LAB %>% group_by(taxon, community) %>% summarise(number = n())
+community_summary
+```
+
+# Observations
+- Streptococcus is the most commonly occuring LAB.
+- Samples without any LAB (NONE) are produced the fewest.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

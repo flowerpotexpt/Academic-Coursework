@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+
+
+
+<title>Assignment 1</title>
+
+<script src="assignment_01_files/header-attrs-2.1/header-attrs.js"></script>
+<script src="assignment_01_files/jquery-1.11.3/jquery.min.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link href="assignment_01_files/bootstrap-3.3.5/css/bootstrap.min.css" rel="stylesheet" />
+<script src="assignment_01_files/bootstrap-3.3.5/js/bootstrap.min.js"></script>
+<script src="assignment_01_files/bootstrap-3.3.5/shim/html5shiv.min.js"></script>
+<script src="assignment_01_files/bootstrap-3.3.5/shim/respond.min.js"></script>
+<script src="assignment_01_files/navigation-1.1/tabsets.js"></script>
+<link href="assignment_01_files/highlightjs-9.12.0/default.css" rel="stylesheet" />
+<script src="assignment_01_files/highlightjs-9.12.0/highlight.js"></script>
+<script src="assignment_01_files/kePrint-0.0.1/kePrint.js"></script>
+
+<style type="text/css">code{white-space: pre;}</style>
+<style type="text/css">
+  pre:not([class]) {
+    background-color: white;
+  }
+</style>
+<script type="text/javascript">
+if (window.hljs) {
+  hljs.configure({languages: []});
+  hljs.initHighlightingOnLoad();
+  if (document.readyState && document.readyState === "complete") {
+    window.setTimeout(function() { hljs.initHighlighting(); }, 0);
+  }
+}
+</script>
+
+
+
+<style type="text/css">
+h1 {
+  font-size: 34px;
+}
+h1.title {
+  font-size: 38px;
+}
+h2 {
+  font-size: 30px;
+}
+h3 {
+  font-size: 24px;
+}
+h4 {
+  font-size: 18px;
+}
+h5 {
+  font-size: 16px;
+}
+h6 {
+  font-size: 12px;
+}
+.table th:not([align]) {
+  text-align: left;
+}
+</style>
+
+<link rel="stylesheet" href="../styles/style.css" type="text/css" />
+
+
+
+<style type = "text/css">
+.main-container {
+  max-width: 940px;
+  margin-left: auto;
+  margin-right: auto;
+}
+code {
+  color: inherit;
+  background-color: rgba(0, 0, 0, 0.04);
+}
+img {
+  max-width:100%;
+}
+.tabbed-pane {
+  padding-top: 12px;
+}
+.html-widget {
+  margin-bottom: 20px;
+}
+button.code-folding-btn:focus {
+  outline: none;
+}
+summary {
+  display: list-item;
+}
+</style>
+
+
+
+<!-- tabsets -->
+
+<style type="text/css">
+.tabset-dropdown > .nav-tabs {
+  display: inline-table;
+  max-height: 500px;
+  min-height: 44px;
+  overflow-y: auto;
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.tabset-dropdown > .nav-tabs > li.active:before {
+  content: "";
+  font-family: 'Glyphicons Halflings';
+  display: inline-block;
+  padding: 10px;
+  border-right: 1px solid #ddd;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open > li.active:before {
+  content: "&#xe258;";
+  border: none;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open:before {
+  content: "";
+  font-family: 'Glyphicons Halflings';
+  display: inline-block;
+  padding: 10px;
+  border-right: 1px solid #ddd;
+}
+
+.tabset-dropdown > .nav-tabs > li.active {
+  display: block;
+}
+
+.tabset-dropdown > .nav-tabs > li > a,
+.tabset-dropdown > .nav-tabs > li > a:focus,
+.tabset-dropdown > .nav-tabs > li > a:hover {
+  border: none;
+  display: inline-block;
+  border-radius: 4px;
+  background-color: transparent;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open > li {
+  display: block;
+  float: none;
+}
+
+.tabset-dropdown > .nav-tabs > li {
+  display: none;
+}
+</style>
+
+<!-- code folding -->
+
+
+
+
+</head>
+
+<body>
+
+
+<div class="container-fluid main-container">
+
+
+
+
+<div class="fluid-row" id="header">
+
+
+
+<h1 class="title toc-ignore">Assignment 1</h1>
+<h4 class="date">April 2019</h4>
+
+</div>
+
+
+<div id="analysis-of-the-microbial-composition-of-fermented-milk" class="section level2">
+<h2>Analysis of the microbial composition of fermented milk</h2>
+<div id="introduction" class="section level3">
+<h3>Introduction</h3>
+<p>Fermentation of food products is a way to preserve food which dates back to ancient times. The trick of fermentation is to let “good” microorganisms dominate a food product, thereby inhibiting growth of spoilage organisms. In addition to preservation, fermentation processes often yield pleasant flavours and tastes, and also change the consistency of a food product considerably. Examples are wine and beer, sourdough bread, cheese, yoghurt, kefir, sauerkraut, saucages, olives, soy sauce, tempeh and cocoa beans. Most food fermentations contain dozens to hundreds of microbial species, depending on the type of food and the way they were treated before the fermentation.</p>
+<p><em>Lait caillé</em> is a naturally fermented milk produced in multiple ways. A study by Parker <em>et al.</em> <span class="citation">(1)</span> focused on <em>lait caillé</em> produced in Northern Senegal. In this region milk is fermented in wooden bowls called “lahals”. The surface of these bowls have a biofilm that initiates a new fermentation. In this way, cultures are transferred between batches of milk. Another way to initiate a new fermentation is to add a little <em>lait caillé</em> from a previous fermentation (backslopping).</p>
+<p>We will use the data from the study by Parker to investigate the compositions of the microbial communities found in <em>lait caillé</em>.</p>
+</div>
+<div id="the-data" class="section level3">
+<h3>The data</h3>
+<p>The species composition was assessed by sequencing the 16S-rRNA. Bacterial species can be identified at the Genus level by unique sequence “barcodes” present in this rRNA molecule. The number of reads of a particular sequence in a sample relative to the total number of reads made in that sample is an approximation of the fraction of a genus. The data set in the <a href="data">data</a> folder consists of two files.</p>
+<p>The file <a href="data/lait_caille_data.xlsx">lait_caille_data.xlsx</a> was taken from <span class="citation">(1)</span>. This spreadsheet file contains three worksheets:</p>
+<ul>
+<li><strong>counts</strong>: Containing the 16S-RNA sequence counts per taxonomic level, as well as information about the taxons to which the counted sequences belong<br />
+</li>
+<li><strong>samples</strong>: Containing information about the samples</li>
+<li><strong>communities</strong>: Containing an abbreviation of the community names</li>
+</ul>
+<p>The taxonomy of organisms is a hierarchical tree of nodes called <em>taxons</em>. The columns A–C of sheet <em>counts</em> give a unique indentifier <strong>rankID</strong> to each taxon and also give their level in the hierarchy (<strong>taxlevel</strong>) labeled 0–6, as well as a name of the level (<strong>taxon</strong>). The highest level is 0 which corresponds to the root node (taxon: “Root”). There is only one root node. Columns D–GE give the number of sequences counted in every sample that reside under the taxon. Sample names are listed in the first row of these columns. Since the taxonomy is a hierarchical tree, <em>the number of counted sequences accumulate from lower level to higher levels</em>. The taxonomic levels correspond to:</p>
+<ul>
+<li>1: Kingdom</li>
+<li>2: Phylum</li>
+<li>3: Class</li>
+<li>4: Order</li>
+<li>5: Family</li>
+<li>6: Genus</li>
+</ul>
+<p>There are two kingdoms (level 1 taxons) in the file, <em>Bacteria</em> and <em>Archaea</em>. Below Genus there also exists a level Species, but since 16S-RNA sequences can usually not be attributed to a unique species, this level is not listed in the table. An example of a well known genus is <em>Escherichia</em>. Species from this genus are for example <em>Escherichia coli</em> and <em>Escherichia albertii</em>. Sequences from both would be accumulated under the taxon “Genus <em>Escherichia</em>”.</p>
+<p>Note that this file contains information from another experiment as well, both in the <strong>counts</strong> sheet and the <strong>samples</strong> sheet. You will be asked to filter these out using the information from the <strong>communities</strong> sheet.</p>
+<p>The file <a href="data/colon_genera.tab">colon_genera.tab</a> contains a list of names of most common genera in human and cow colons.</p>
+</div>
+<div id="the-assignment" class="section level3">
+<h3>The assignment</h3>
+<div id="requirements" class="section level4">
+<h4>Requirements</h4>
+<ul>
+<li>label your results with the <strong>same numbers as below</strong>, otherwise we will miss the fact that you have carried out a task, which would decrease your grade</li>
+<li>Graphs and tables should have proper <strong>captions</strong> and <strong>legends</strong>. For graphs you can use the <code>fig.cap</code> chunck option as in this exxample: <code>{r, fig.cap="Figure 1. My text about this figure"}</code>. For a table you can print text below it. But, I recommend to use the <code>kable()</code> function from the <code>knitr</code> package and use its <code>caption</code> argument, as in this example: <code>knitr::kable(object, format="html", caption="Table 1. My legend to this table.")</code>. <em>Tip: the <code>kable_styling()</code> function from the <code>kableExtra</code> package provides even more flexibility on top of the <code>kable()</code> output.</em></li>
+<li>Hand in <strong>two documents</strong>: an RMarkdown (*.RMD) document and the document generated from it (pdf or html) with code displayed (global chunk option: <code>echo=TRUE</code>).</li>
+<li>Read the questions carefully and answer the entire question.</li>
+</ul>
+</div>
+<div id="questions" class="section level4">
+<h4>Questions</h4>
+<ol class="example" style="list-style-type: decimal">
+<li><p>Study the file <a href="data/lait_caille_data.xlsx">lait_caille_data.xlsx</a>. The creator(s) of this file implemented some of the rules for proper data storage (<a href="http://www.few.vu.nl/~molenaar/courses/statR/syllabus/rawdata.html">Syllabus, chapter 7</a>), but in other aspects the data format could be improved. Please discuss how some of the rules were properly applied, and where improvements could still be made.</p></li>
+<li><p>Load the taxonomic and counts data from the <strong>counts</strong> sheet in an object called <code>counts</code>. Also load the sample data from the <strong>samples</strong> sheet in an object called <code>samples</code>, and the <strong>communities</strong> sheet in an object called <code>communities</code>.</p></li>
+<li><p>The fact that taxonomic data is mixed with counts in the <strong>counts</strong> sheet is inconvenient in subsequent analyses, especially since the column names (starting from column D) are sample identifiers that we want to use to link with sample information from the <strong>samples</strong> sheet. Split the <code>counts</code> object into a <code>taxonomy</code> object with taxonomic information and a <code>counts</code> object with only sample information. Both objects should contain the <em>rankID</em> column to be able to link them again. Then, to simplify subsequent analyses, gather the <code>count</code> object into “long” or “tidy” format with columns <em>rankID</em>, <em>sample</em> and <em>count</em>. <em>Note: to select columns from a table you use the <code>select()</code> function (<code>select()</code> is for columns, <code>filter()</code> is for rows)</em>.</p></li>
+<li><p>Now you have to do some checks. First, check whether are all samples present in the <code>counts</code> also listed in the <code>samples</code> object and <em>vice versa</em>. Second, check whether all original names in the <code>communities</code> object are listed in the <code>samples</code> object and <em>vice versa</em>. If some of these checks yield FALSE, find out why.</p></li>
+</ol>
+<p>In this assignment we only work with the samples from the communities in Senegal, <em>i.e.</em> those belonging to the communities listed in the <code>communities</code> object. Therefore, you should <strong>filter out samples from other experiments</strong>. Furthermore, in the exercises below, we will work <strong>only with the lowest level (level 6) counts</strong>.</p>
+<ol start="5" class="example" style="list-style-type: decimal">
+<li><p>Filter the <code>counts</code> object to only contain the samples from the communities in Senegal and only level 6 (genus) counts. Put the result in an object called <code>counts_selected</code>.</p></li>
+<li><p>For the selection of samples from the communities in Senegal calculate total counts per sample and the fraction of counts in each sample per genus (level 6 taxons). Add the fraction as a new column (<strong>fraction</strong>)to the <code>counts_selected</code> object. Don’t forget to <code>ungroup()</code> the <code>counts_selected</code> after this calculation, or you might obtain weird errors later.</p></li>
+<li><p>The three main genera present in the samples appear to be the lactic acid bacteria (LAB) genera <em>Lactococcus</em> (“cheese bacterium”), <em>Lactobacillus</em> and <em>Streptococcus</em> (“yohurt bacteria”) <span class="citation">(1)</span>. Create an object containing for every sample (only selected samples) the individual and total fractions of these three LAB genera. Make a histogram of the total fraction of these LAB.</p></li>
+</ol>
+<!-- Ternary diagrams are a convenient way to display compositional data with three components. A package `ggtern` for making ternary diagrams in ggplot style is installable from CRAN @Hamilton2018. Ternary diagrams are only interpretable if the three displayed components add up to 100%. This is almost the case for the __LABfraction__ in most samples in this experiment. -->
+<!-- @. Make a ternary graph (triangular graph) of the fraction of these three genera. Indicate with symbol or colour if the total fraction of LAB is less than 90%. -->
+<!-- ```{r} -->
+<!-- lab_fractions <- lab_fractions %>% -->
+<!--   mutate(totalfraction = ifelse(LABfraction<0.9,"< 90%","> 90%")) -->
+<!-- p <- ggtern::ggtern(lab_fractions, aes(x=Lactococcus, y=Lactobacillus, z=Streptococcus)) -->
+<!-- ``` -->
+<ol start="8" class="example" style="list-style-type: decimal">
+<li>Make an object in which the dominant LAB genus is listed per sample. If the total LAB is less than 90% then set the value for dominant LAB genus to “(none)”. Print a table that summarizes the total number of samples per dominant LAB. </br> <em>Note: you can use <code>taxon[which.max(fraction)]</code> in a <code>summarize</code> function to obtain the group-wise taxon with maximal fraction.</em></li>
+</ol>
+<p>In general you do not want bacteria from the colon in a food product, at least some of them are known to cause health problems. The table file <a href="data/colon_genera.tab">colon_genera.tab</a> contains a list of genera commonly found in human and bovine colon. For simplicity, we consider a sample heavily contaminated with colon bacteria if the <strong>total fraction</strong> of these genera exceeds 1%.</p>
+<ol start="9" class="example" style="list-style-type: decimal">
+<li><p>Modify the previous table by adding two columns listing the <em>number</em> and <em>fraction</em> of heavily contaminated samples.</p></li>
+<li><p>The species diversity of samples can be assessed by several measures like Shannon-Wiener index, Inverse Simpson index and Renyi diversity of infinit order, as was shown in an <a href="http://www.few.vu.nl/~molenaar/courses/statR/syllabus/interacting.html#exercises-1">exercise</a> in the syllabus. Make a graph displaying the total fraction of contaminating genera of samples as a function fo the Shannon-Wiener diversity index. Use different colours or symbols to indicate the dominant LAB in the samples.</p></li>
+<li><p>Perform a t-test to investigate whether the total fraction of contamination differs significantly between samples that do and don’t have a dominant LAB. What is your conclusion?</p></li>
+<li><p>Make a table that lists the dominant LAB categories per village (community). Discuss whether there are notable differences that require more detailed investigation.</p></li>
+</ol>
+</div>
+</div>
+</div>
+<div id="references" class="section level2 unnumbered">
+<h2 class="unnumbered">References</h2>
+<div id="refs" class="references">
+<div id="ref-Parker2018">
+<p>1. Parker M, et al. (2018) Naturally fermented milk from northern senegal: Bacterial community composition and probiotic enrichment with <em>Lactobacillus rhamnosus</em>. <em>Frontiers in Microbiology</em> 9. doi:<a href="https://doi.org/10.3389/fmicb.2018.02218">10.3389/fmicb.2018.02218</a>.</p>
+</div>
+</div>
+</div>
+
+
+
+
+</div>
+
+<script>
+
+// add bootstrap table styles to pandoc tables
+function bootstrapStylePandocTables() {
+  $('tr.header').parent('thead').parent('table').addClass('table table-condensed');
+}
+$(document).ready(function () {
+  bootstrapStylePandocTables();
+});
+
+
+</script>
+
+<!-- tabsets -->
+
+<script>
+$(document).ready(function () {
+  window.buildTabsets("TOC");
+});
+
+$(document).ready(function () {
+  $('.tabset-dropdown > .nav-tabs > li').click(function () {
+    $(this).parent().toggleClass('nav-tabs-open')
+  });
+});
+</script>
+
+<!-- code folding -->
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "assignment_01_files/mathjax-local/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>
