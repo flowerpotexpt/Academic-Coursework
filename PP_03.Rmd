@@ -1,0 +1,363 @@
+---
+title: "Statistics with R Assignment 3"
+author: "Yashjit Gangopadhyay (2662062)"
+date: "28/05/2020"
+output:
+  html_document:
+    df_print: paged
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(broom)
+library(knitr)
+library(skimr)
+library(GGally)
+library(dplyr)
+library(reshape2)
+library(tidyr)
+library(class) 
+library(randomForest) 
+library(e1071) 
+library(ggplot2)
+library(gplots)
+library(kableExtra)
+```
+
+# Question 1
+Read the data into R. Carefully investigate the data. You may want to use the summary() (or alternatively skimr::skim() which works nicely with Rmarkdown by producing tabular-formatted output) and duplicated() functions. Also make a table of the number of times a location is observed (as table 1 in the paper).
+```{r}
+# Reading data
+df_ecoli <- read.table('ecoli.data',header=TRUE,sep="")
+# Data summary
+skimr::skim(df_ecoli)
+# Checking duplicates
+counter = 0
+for (i in duplicated(df_ecoli)){
+  if (i == TRUE){
+    counter = counter + 1
+  }
+}
+cat('\n\n\n', counter, 'duplicates found. Removal not required.')
+# Creating location table
+table_1 <- df_ecoli %>% group_by(location) %>% count()
+names(table_1)[1]<- 'Location'
+names(table_1)[2]<- 'Number'
+knitr::kable(table_1, format = 'html', caption = 'Table 1. The location and number of occurences of each class of the E.coli dataset are shown') %>% kable_styling(bootstrap_options = "striped", full_width = F)
+
+```
+# Question 2
+Remove from the dataset the locations that have been so scarcely observed that they would occur on average less than twice in a (stratified) training set. Why do we want to remove these?
+```{r}
+df_ecoli <- df_ecoli %>% filter(!location %in% c('imL', 'imS', 'omL'))
+df_ecoli <- droplevels(df_ecoli)
+```
+Why do we remove these? To avoid overfitting. These data might have been collected due to error and doesn't aid in model building.
+# Question 3 
+Make a pairplot of the data. Usually pairs() works, but you could also use the fancy ggpairs() function from the GGally package. Give a brief account of your conclusions and their consequences (modifications that you possibly want to make) from the examination of the data and the pairplot.
+```{r message=FALSE, warning=FALSE, fig.width=12, fig.height=8, fig.cap="..."}
+ggpairs(df_ecoli, mapping = NULL, columns = 2:8, title = 'Figure 1. E.coli pairplots')
+```
+Results: A high degree of correlation is observed between 'alm1' and 'alm2'. Removing either variables would be a good choice. Although, when I removed 'alm1', the model accuracy actually dropped.
+
+
+# Question 4
+Carry out KNN, Naive Bayes and Random Forest classification and cross validation of the data. Summarize the conclusions as in table 3 of the paper. Since getting mean and standard deviation in the same table as the results from the individual partitions is rather complicated you can show the results in two tables.
+```{r message=FALSE, warning=FALSE, fig.width=12, fig.height=8, fig.cap="..."}
+partition <- function(k, f) {
+  if (is.atomic(f)) {
+    lenf <- length(f)
+  } else {
+    lenf <- length(f[[1]])
+  }
+  part <- vector(mode="integer", length=lenf)
+  tapply(X=1:length(part), INDEX=f, FUN=function(i) {
+    part[i] <<- as.integer((sample(1:length(i)) + sample(1:k,1))%%k + 1)
+  }
+  )
+  return(part)
+}
+
+# Features dataset
+ecoli.features <- subset(df_ecoli, select = -c(SpAccNr, location))
+
+# labels dataset
+ecoli.labels <- as.list(subset(df_ecoli, select = c(location)))$location
+
+# Model prediction and Cross-validation
+set.seed(21)
+section <- partition(4, ecoli.labels)
+ecoli_accuracy <- data.frame(partition = min(section):max(section))
+ecoli_error <- data.frame(partition = min(section):max(section))
+for (i in min(section):max(section)){
+  set.seed(21)
+  
+  # k-NN model
+  knn_pred <- knn(ecoli.features[section != i,], ecoli.features[section == i,], ecoli.labels[section != i], 7)
+  
+  # Naive Bayes model
+  nb_model <- naiveBayes(x = ecoli.features[section != i,], y = ecoli.labels[section != i])
+  nb_pred <- predict(nb_model, ecoli.features[section == i,])
+  
+  # Random Forest model
+  rf_model <- randomForest(x = ecoli.features[section != i,], y = ecoli.labels[section != i], proximity = TRUE, importance = TRUE)
+  rf_pred <- predict(rf_model, ecoli.features[section == i,])
+  
+  # Model Accuracy
+  ecoli_acc_knn <- mean(knn_pred == ecoli.labels[section == i])
+  ecoli_acc_rf <- mean(rf_pred == ecoli.labels[section == i])
+  ecoli_acc_nb <- mean(nb_pred == ecoli.labels[section == i])
+  ecoli_accuracy[i, 'k-NN'] <- ecoli_acc_knn
+  ecoli_accuracy[i, 'Naive-Bayes'] <- ecoli_acc_nb
+  ecoli_accuracy[i, 'Random-Forest'] <- ecoli_acc_rf
+  
+  # Model Error
+  ecoli_err_knn <- mean(knn_pred != ecoli.labels[section == i])
+  ecoli_err_nb <- mean(nb_pred != ecoli.labels[section == i])
+  ecoli_err_rf <- mean(rf_pred != ecoli.labels[section == i])
+  ecoli_error[i, 'k-NN'] <- ecoli_err_knn
+  ecoli_error[i, 'Naive-Bayes'] <- ecoli_err_nb
+  ecoli_error[i, 'Random-Forest'] <- ecoli_err_rf
+}
+
+# Mean and standard deviation : accuracy
+average_acc <- as.data.frame(lapply(ecoli_accuracy, mean))
+std_dev_acc <- as.data.frame(lapply(ecoli_accuracy, sd))
+average_acc[1,1] <- 'Mean'
+std_dev_acc[1,1] <- 'Std. Deviation'
+ecoli_accuracy[length(rownames(ecoli_accuracy))+1,] <- average_acc
+ecoli_accuracy[length(rownames(ecoli_accuracy))+1,] <- std_dev_acc
+
+# Mean and standard deviation : error
+average_err <- as.data.frame(lapply(ecoli_error, mean))
+std_dev_err <- as.data.frame(lapply(ecoli_error, sd))
+average_err[1,1] <- 'Mean'
+std_dev_err[1,1] <- 'Std. Deviation'
+ecoli_error[length(rownames(ecoli_error))+1,] <- average_err
+ecoli_error[length(rownames(ecoli_error))+1,] <- std_dev_err
+
+# Output table
+knitr::kable(ecoli_accuracy, format = 'html', caption = 'Table 2.a. Performance of k-NN, Naive Bayes and Random Forest (metric: accuracy)') %>%
+  kable_styling(bootstrap_options = "striped", full_width = F)
+knitr::kable(ecoli_error, format = 'html', caption = 'Table 2.b. Performance of k-NN, Naive Bayes and Random Forest (metric: error)') %>%
+  kable_styling(bootstrap_options = "striped")
+```
+Results: Random Forest is the best performing model with a slightly higher accuracy than k-NN. Naive Bayes is the worst performing model.
+
+# Question 5
+Perform suitable statistical tests to find out whether algorithms perform better than the others. Present their results in a table. What do you conclude from the tests?
+
+```{r}
+test1 <- t.test(ecoli_accuracy$`k-NN`, ecoli_accuracy$`Naive-Bayes`, paired=TRUE)
+test2 <- t.test(ecoli_accuracy$`k-NN`, ecoli_accuracy$`Random-Forest`, paired=TRUE)
+test3 <- t.test(ecoli_accuracy$`Random-Forest`, ecoli_accuracy$`Naive-Bayes`, paired=TRUE)
+
+table_4 <- data.frame('Model A' = c('k-NN','k-NN','Random-Forest'))
+table_4['Model B'] <- c('Naive-Bayes', 'Random-Forest', 'Naive-Bayes')
+table_4['p-value'] <- c(test1$p.value, test2$p.value, test3$p.value)
+
+table_4['t-statistic'] <- c(test1$statistic, test2$statistic, test3$statistic)
+table_4['Estimate'] <- c(test1$estimate, test2$estimate, test3$estimate)
+table_4['Parameter'] <- c(test1$parameter, test2$parameter, test3$parameter)
+table_4['C.I.(left-side)'] <-c(test1$conf.int[1],test2$conf.int[1],test3$conf.int[1])
+table_4['C.I. (right-side)'] <-c(test1$conf.int[2],test2$conf.int[2],test3$conf.int[2])
+
+knitr::kable(table_4, format = 'html', caption = 'Table 3. Ecoli t-test statistics with 95% confidence interval') %>%
+  kable_styling(bootstrap_options = "striped")
+```
+
+# Question 6 [Yeast]
+Read the data into R. Carefully investigate the data. Make a table of the number of times a location is observed.
+```{r}
+# Reading data
+df_yeast <- read.table('yeast.data', header=TRUE, sep="")
+
+# Checking data summary
+skimr::skim(df_yeast)
+
+# Checking duplicates
+counter = 0
+for (i in duplicated(df_yeast)){
+  if (i == TRUE){
+    counter = counter + 1
+  }
+}
+cat('\n\n\n', counter, 'duplicates found. Proceeding to remove them.')
+
+# Removing duplicates
+df_yeast <- df_yeast[unique(df_yeast[,1]),]
+
+# Creating location table
+table_3 <- df_yeast %>% group_by(location) %>% count()
+names(table_3)[1]<- 'Location'
+names(table_3)[2]<- 'Number'
+knitr::kable(table_3, format = 'html', caption = 'Table 4. Number of times a location is observed') %>%
+  kable_styling(bootstrap_options = "striped", full_width = F)
+
+
+```
+# Question 7
+Make a pairplot of the data. Give a brief account of your conclusions and their consequences.
+```{r message=FALSE, warning=FALSE, fig.width=12, fig.height=8, fig.cap="..."}
+ggpairs(df_yeast, mapping = NULL, columns = 2:9, title = 'Figure 2: Yeast pairsplot')
+```
+Conclusion:
+
+# Question 8
+Carry out KNN, Naive Bayes and Random Forest classification and cross validation of the data. Summarize the conclusions.
+```{r}
+df_yeast$pox <- as.factor(df_yeast$pox)
+
+# Features dataset
+yeast.features <- subset(df_yeast, select = -c(SpAccNr, location))
+
+# labels dataset
+yeast.labels <- as.list(subset(df_yeast, select = c(location)))$location
+
+# Model prediction and Cross-validation
+set.seed(21)
+section <- partition(10, yeast.labels)
+ecoli_accuracy <- data.frame(partition = min(section):max(section))
+yeast_error <- data.frame(partition = min(section):max(section))
+for (i in min(section):max(section)){
+  set.seed(21)
+  
+  # k-NN model
+  knn_pred <- knn(yeast.features[section != i,], yeast.features[section == i,], yeast.labels[section != i], 21)
+  
+  # Naive Bayes model
+  nb_model <- naiveBayes(x = yeast.features[section != i,], y = yeast.labels[section != i])
+  nb_pred <- predict(nb_model, yeast.features[section == i,])
+  
+  # Random Forest model
+  rf_model <- randomForest(x = yeast.features[section != i,], y = yeast.labels[section != i], proximity = TRUE, importance = TRUE)
+  rf_pred <- predict(rf_model, yeast.features[section == i,])
+  
+  # Model Accuracy
+  yeast_acc_knn <- mean(knn_pred == yeast.labels[section == i])
+  yeast_acc_rf <- mean(rf_pred == yeast.labels[section == i])
+  yeast_acc_nb <- mean(nb_pred == yeast.labels[section == i])
+  ecoli_accuracy[i, 'k-NN'] <- yeast_acc_knn
+  ecoli_accuracy[i, 'Naive-Bayes'] <- yeast_acc_nb
+  ecoli_accuracy[i, 'Random-Forest'] <- yeast_acc_rf
+  
+  # Model Error
+  yeast_err_knn <- mean(knn_pred != yeast.labels[section == i])
+  yeast_err_nb <- mean(nb_pred != yeast.labels[section == i])
+  yeast_err_rf <- mean(rf_pred != yeast.labels[section == i])
+  yeast_error[i, 'k-NN'] <- yeast_err_knn
+  yeast_error[i, 'Naive-Bayes'] <- yeast_err_nb
+  yeast_error[i, 'Random-Forest'] <- yeast_err_rf
+}
+
+# Mean and standard deviation : accuracy
+average_acc <- as.data.frame(lapply(ecoli_accuracy, mean))
+std_dev_acc <- as.data.frame(lapply(ecoli_accuracy, sd))
+average_acc[1,1] <- 'Mean'
+std_dev_acc[1,1] <- 'Std. Deviation'
+ecoli_accuracy[length(rownames(ecoli_accuracy))+1,] <- average_acc
+ecoli_accuracy[length(rownames(ecoli_accuracy))+1,] <- std_dev_acc
+
+# Mean and standard deviation : error
+average_err <- as.data.frame(lapply(yeast_error, mean))
+std_dev_err <- as.data.frame(lapply(yeast_error, sd))
+average_err[1,1] <- 'Mean'
+std_dev_err[1,1] <- 'Std. Deviation'
+yeast_error[length(rownames(yeast_error))+1,] <- average_err
+yeast_error[length(rownames(yeast_error))+1,] <- std_dev_err
+
+# Output table
+knitr::kable(ecoli_accuracy, format = 'html', caption = 'Table 5.a. Performance of k-NN, Naive Bayes and Random Forest (metric: accuracy)') %>%
+  kable_styling(bootstrap_options = "striped")
+knitr::kable(yeast_error, format = 'html', caption = 'Table 5.b. Performance of k-NN, Naive Bayes and Random Forest (metric: error)') %>%
+  kable_styling(bootstrap_options = "striped")
+```
+Summary: Random Forest outperforms all the other models with the highest accuracy. Naive Bayes has the worst performance.
+
+# Question 9
+Perform suitable statistical tests to find out whether algorithms perform better than others on these data. Present their results in a table and give a brief conclusion. Give an explanation if there is a marked difference between your results and the one from the paper.
+
+```{r}
+test1 <- t.test(ecoli_accuracy$`k-NN`, ecoli_accuracy$`Naive-Bayes`, paired=TRUE)
+test2 <- t.test(ecoli_accuracy$`k-NN`, ecoli_accuracy$`Random-Forest`, paired=TRUE)
+test3 <- t.test(ecoli_accuracy$`Random-Forest`, ecoli_accuracy$`Naive-Bayes`, paired=TRUE)
+
+table_4 <- data.frame('Model A' = c('k-NN','k-NN','Random-Forest'))
+table_4['Model B'] <- c('Naive-Bayes', 'Random-Forest', 'Naive-Bayes')
+table_4['p-value'] <- c(test1$p.value, test2$p.value, test3$p.value)
+
+table_4['t-statistic'] <- c(test1$statistic, test2$statistic, test3$statistic)
+table_4['Estimate'] <- c(test1$estimate, test2$estimate, test3$estimate)
+table_4['Parameter'] <- c(test1$parameter, test2$parameter, test3$parameter)
+table_4['C.I. (L)'] <-c(test1$conf.int[1],test2$conf.int[1],test3$conf.int[1])
+table_4['C.I. (R)'] <-c(test1$conf.int[2],test2$conf.int[2],test3$conf.int[2])
+
+knitr::kable(table_4, format = 'html', caption = 'Table 6. Yeast t-test statistics with 95% confidence interval') %>%
+  kable_styling(bootstrap_options = "striped")
+
+```
+
+# Question 10
+Are the conditions for the naive Bayes classifier, namely conditional independence of all pairs of predictors, satisfied in general in the yeast data? Illustrate your conclusion with a graph.
+
+```{r}
+# Yeast correlations
+yeast_corr_data <- subset(df_yeast, select = -c(SpAccNr, location, erl, pox))
+yeast_corr_mat <- round(cor(yeast_corr_data),2)
+
+# Heat maps
+heatmap.2(yeast_corr_mat, scale = "row", col = bluered(100), cellnote=yeast_corr_mat,
+          trace = "none", density.info = "none", notecol = 'black', main = 'Figure 3: Yeast Pearson Correlation')
+```
+Conclusion: Naive Bayes assumptions: all the variables are independent of each other.  To check this, we conduct a Pearson correlation among the variables. If the variables depict a high degree of correlation, this implies that in fact, they are not really independent of each other. For the yeast dataset, we observe that ‘mcg’ and ‘gvh’ are highly positively correlated while ‘alm’ and ‘gvh’ are negatively correlated. This suggests that the naive Bayes assumptions are not satisfied for this dataset.
+
+# Question 11
+Without actually carrying this out, is it possible to obtain probability distributions over the classes (cellular locations) from each of the algorithms? If so, please explain how.
+
+k-NN: We can calculate the probability by using the prob=TRUE setting in the knn() classifier. Returns proportion of votes of winning class.
+Naive Bayes: We can calculate the probability by using type=raw in predict(). This gives the probability for every class.
+Random Forest: We can calculate the probability by using type=prob in predict() just like in Naive Bayes (gives probability of every class).
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
